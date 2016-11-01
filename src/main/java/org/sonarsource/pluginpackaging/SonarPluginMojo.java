@@ -67,7 +67,7 @@ public class SonarPluginMojo extends AbstractSonarMojo {
   private static final String LIB_DIR = "META-INF/lib/";
   private static final String[] DEFAULT_EXCLUDES = new String[] {"**/package.html"};
   private static final String[] DEFAULT_INCLUDES = new String[] {"**/**"};
-
+  private static final String[] NOT_ACCESSIBLES = new String[] { "commons-io","com.google.guava","org.apache.commons","commons-lang" };
   @Component(role = org.codehaus.plexus.archiver.Archiver.class, hint = "jar")
   protected JarArchiver jarArchiver;
 
@@ -213,7 +213,7 @@ public class SonarPluginMojo extends AbstractSonarMojo {
       if (isSonarPlugin(artifact) || isScopeProvidedOrTest(artifact)) {
         include = false;
       }
-      if (containsArtifact(providedArtifacts, artifact)) {
+      if (isAccessible(artifact) && containsArtifact(providedArtifacts, artifact)) {
         getLog().warn(artifact + " is provided by SonarQube plugin API and will not be packaged in your plugin");
         include = false;
       }
@@ -224,6 +224,16 @@ public class SonarPluginMojo extends AbstractSonarMojo {
     return result;
   }
 
+  private static boolean isAccessible(Artifact artifact) {
+    String groupId = artifact.getGroupId();
+    for(String notAccessible : NOT_ACCESSIBLES) {
+       if(groupId.equals(notAccessible)) {
+         return false;
+       }
+    }
+    return true;
+
+  }
   private static boolean isScopeProvidedOrTest(Artifact artifact) {
     return Artifact.SCOPE_PROVIDED.equals(artifact.getScope()) || Artifact.SCOPE_TEST.equals(artifact.getScope());
   }
